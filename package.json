@@ -1,0 +1,27 @@
+{
+  "name": "AVIShop-HDBaseT-Matrix",
+	"version": "0.0.1",
+	"api_version": "0.1.2",
+	"description": "HDBaseT HDMI Matrix 8x8 4K",
+	"keywords": [
+		"videohub",
+		"Matrix"
+	],
+	"manufacturer": "AVIShop",
+	"product": "HDBaseT 8x8 4K",
+	"shortname": "HDBaseT",
+	"homepage": "https://github.com/bitfocus/companion-module-AVIShop-HDBaseT-Matrix#readme",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/bitfocus/companion-module-AVIShop-HDBaseT-Matrix.git"
+	},
+	"author": "Andreas H. Thomsen <mc-hauge@hotmail.com>",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/bitfocus/companion-module-AVIShop-HDBaseT-Matrix/issues"
+	}
+}
