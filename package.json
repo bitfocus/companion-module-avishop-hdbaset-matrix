@@ -1,5 +1,5 @@
 {
-  "name": "AVIShop-HDBaseT-Matrix",
+	"name": "avishop-hdbaset-matrix",
 	"version": "0.0.1",
 	"api_version": "0.1.2",
 	"description": "HDBaseT HDMI Matrix 8x8 4K",
