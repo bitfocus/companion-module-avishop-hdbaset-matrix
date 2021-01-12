@@ -95,7 +95,7 @@ const Input_All = [
 	{ id: 6,	label: 'IN 6'},	
 	{ id: 7,	label: 'IN 7'},	
 	{ id: 8,	label: 'IN 8'},
-	{ id: 8,	label: 'ALL'},
+	{ id: 9,	label: 'ALL'},
 ]
 
 // EDID Index Setup
@@ -115,6 +115,12 @@ const EDID_Index = [
 	{ id: 13,	label: '4K2K60 Stereo Audio 2.0', 	short: '4K2K60 2.0'},
 	{ id: 14,	label: '4K2K60 Dolby/DTS 5.1', 		short: '4K2K60 5.1'},	
 	{ id: 15,	label: '4K2K60 HD Audio 7.1', 		short: '4K2K60 7.1'},	
+]
+
+// EDID ON / OFF
+const EDID_ON_OFF = [
+	{ id: '0', label: 'OFF'},	
+	{ id: '1',	label: 'ON'},	
 ]
 
 // ARC ON / OFF
@@ -143,7 +149,7 @@ instance.prototype.init_presets = function () {
 					style: 'text',
 					text: Input[y].label + '\\nTo\\n' +  Output[x].short,
 					size: pstSize,
-					color: rgb(255,255,255),
+					color: self.rgb(255,255,255),
 					bgcolor: self.rgb(0,0,0)
 				},
 				actions: [{	
@@ -165,7 +171,7 @@ instance.prototype.init_presets = function () {
 				style: 'text',
 				text: Input[y].label + '\\nTo\\nALL OUT',
 				size: pstSize,
-				color: rgb(255,255,255),
+				color: self.rgb(255,255,255),
 				bgcolor: self.rgb(0,0,0),
 				relative_delay: true,
 			},
@@ -275,18 +281,40 @@ instance.prototype.init_presets = function () {
 
 	presets.push({
 		category: 'Video/Audio Format',
-		label: 'Auto Set Format',
+		label: 'Auto Set Format OFF',
 		bank: {
 			style: 'text',
-			text: 'Auto Set Format',
+			text: 'Auto Format OFF',
 			size: pstSize,
 			color: self.rgb(255,255,255),
 			bgcolor: self.rgb(0,0,0)
 		},
 		actions: [{	
-			action: 'EDIDAuto', 
+			action: 'EDIDAuto',
+			options: {
+				flag: '0', 
+			}
 		}]
 	});
+
+	presets.push({
+		category: 'Video/Audio Format',
+		label: 'Auto Set Format ON',
+		bank: {
+			style: 'text',
+			text: 'Auto Format ON',
+			size: pstSize,
+			color: self.rgb(255,255,255),
+			bgcolor: self.rgb(0,0,0)
+		},
+		actions: [{	
+			action: 'EDIDAuto',
+			options: {
+				flag: '1', 
+			}
+		}]
+	});
+
 	for (var y in Input) {
 		for (var x in ARC_ON_OFF) {
 			presets.push({
@@ -407,7 +435,18 @@ instance.prototype.actions = function(system) {
 				},
 			]
 		},
-		'EDIDAuto': { label: 'Auto Set Format', },
+		'EDIDAuto': { 
+			label: 'Auto Set Format',
+			options: [
+				{
+					type: 'dropdown',
+					id: 'flag',
+					label: 'Option',
+					default: '1',
+					choices: EDID_ON_OFF
+				},
+			]
+		},
 		'EDIDSet': { 
 			label: 'Set Format (EDID) to Input',
 			options: [
@@ -511,40 +550,48 @@ instance.prototype.action = function(action) {
 			break;
 
 		case 'EDIDAuto':
-			// 03 0b
-			cmd = "a5,5b,03,0b,00,00,00,00,00,00,00,00,f2";
+			// 03 08
+			var paraFlag = opt.flag ? "0f" : "f0";
+			var verify = opt.flag ? "e6" : "05";
+
+			if (opt.flag === '1') {
+				cmd = "a5,5b,03,08,0f,00,00,00,00,00,00,00,e6";
+			}
+			if (opt.flag === '0') {
+				cmd = "a5,5b,03,08,f0,00,00,00,00,00,00,00,05";
+			}
 			break;
 
 		case 'EDIDSet':
 			// "a5,5b,03,02,03,00,02,00,00,00,00,00,ed";
-			var edidIndex = opt.value.toString(16).replace(/^(\w)$/, "0$1");
-			var inIndex = opt.input.toString(16).replace(/^(\w)$/, "0$1");
+			var edidIndex = parseInt(opt.value).toString(16).replace(/^(\w)$/, "0$1");
+			var inIndex = parseInt(opt.input).toString(16).replace(/^(\w)$/, "0$1");
 			var verify = (0x100 - (parseInt(opt.value) + parseInt(opt.input) + 0x05) % 0x100).toString(16).replace(/^(\w)$/, "0$1");
 
 			if (opt.input === 9) {
 				// INPUT ALL    03 01
 				verify = (0x100 - (0x04 + parseInt(opt.value)) % 0x100).toString(16).replace(/^(\w)$/, "0$1");
 				cmd = "a5,5b,03,01," + edidIndex + ",00,00,00,00,00,00,00," + verify;
-				break;
 			}
-
-			cmd = "a5,5b,03,02," + edidIndex + ",00," + inIndex + ",00,00,00,00,00," + verify;
+			else {
+				cmd = "a5,5b,03,02," + edidIndex + ",00," + inIndex + ",00,00,00,00,00," + verify;
+			}
 			break;
 	
 		case 'EDIDCopy':
 			// 03 04
-			var paraCopy = opt.output.toString(16).replace(/^(\w)$/, "0$1");
-			var paraTo = opt.input.toString(16).replace(/^(\w)$/, "0$1");
+			var paraCopy = parseInt(opt.output).toString(16).replace(/^(\w)$/, "0$1");
+			var paraTo = parseInt(opt.input).toString(16).replace(/^(\w)$/, "0$1");
 			var verify = (0x100 - (parseInt(opt.output) + parseInt(opt.input) + 0x07) % 0x100).toString(16).replace(/^(\w)$/, "0$1");
 
 			if (opt.input === 9) {
 				// INPUT ALL    03 03
 				verify = (0x100 - (0x06 + parseInt(opt.output)) % 0x100).toString(16).replace(/^(\w)$/, "0$1");
 				cmd = "a5,5b,03,03," + paraCopy + ",00,00,00,00,00,00,00," + verify;
-				break;
 			}
-
-			cmd = "a5,5b,03,04," + paraCopy + ",00," + paraTo + ",00,00,00,00,00," + verify;
+			else {
+				cmd = "a5,5b,03,04," + paraCopy + ",00," + paraTo + ",00,00,00,00,00," + verify;				
+			}
 			break;
 
 		case 'Arc':
@@ -588,17 +635,17 @@ instance.prototype.action = function(action) {
 	if (cmd !== undefined) {
 		var message = 'http://' + conf.host + ':' + conf.port + '/cgi-bin/submit?cmd=hex(' + cmd + ')';
 
-		this.debug('sending ',message,"to",conf.host);
-		console.log('sending ',message,"to",conf.host);
+		self.debug('sending ',message);
+		console.log('sending ',message);
 
 		self.system.emit('rest_get', message, function (err, result) {
 			if (err !== null) {
-				this.log('error', 'HTTP GET Request failed (' + result.error.code + ')');
-				this.status(self.STATUS_ERROR, result.error.code);
+				self.log('error', 'HTTP GET Request failed (' + result.error.code + ')');
+				self.status(self.STATUS_ERROR, result.error.code);
 			}
 			else {
-				this.status(self.STATUS_OK);
-				this.log('info', 'HTTP GET Response (' + result + ')');
+				self.status(self.STATUS_OK);
+				self.log('info', 'HTTP GET Response (' + result + ')');
 				console.log('HTTP GET Response (' + result + ')');
 			}
 		});	
