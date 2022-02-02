@@ -414,7 +414,7 @@ instance.prototype.init_presets = function () {
 instance.prototype.actions = function(system) {
 	var self = this;
 
-	self.system.emit('instance_actions', self.id, {
+	self.setActions({
 
 		'InOut': { 
 			label: 'Set Input and Output', 
